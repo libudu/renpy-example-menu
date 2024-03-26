@@ -69,10 +69,10 @@ screen choice(items, t=False, id=None, r=True):
             bar:
                 value AnimatedValue(0, 100, t, 100)
                 xysize (669,47)
-                left_bar "gui/time/timebar_hover.png"
-                right_bar "gui/time/timebar_idle.png"
+                left_bar "gui/choice/timebar_hover.png"
+                right_bar "gui/choice/timebar_idle.png"
                 align (0.535, 0.925)
-            add "gui/time/decorate.png"
+            add "gui/choice/decorate.png"
         # 返回计时器
         timer t:
             action Return(0)
@@ -120,8 +120,7 @@ screen choice(items, t=False, id=None, r=True):
                     textbutton i.caption:
                         # 已经选过了
                         if is_chosen:
-                            foreground "gui/button/choice_tik.png"
-                            #background "gui/button/choice_read_background.png"
+                            foreground "gui/choice/choice_tik.png"
                         if no_child:
                             action [Function(set_choice_record, record, item), i.action]
                         else:
