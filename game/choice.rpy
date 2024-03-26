@@ -85,7 +85,7 @@ screen choice(items, t=False, id=None, r=True):
                 _chosen_id[id] = record
         vbox:
             for index, i in enumerate(items):
-                $ item = i[0]
+                $ item = i[0] + "-" + str(index)
                 # 不记录这个选项，标记为 None
                 if i.kwargs.get("r") == False:
                     $ record[item] = None
