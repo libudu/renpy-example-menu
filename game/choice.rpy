@@ -6,11 +6,13 @@
 ## https://www.renpy.cn/doc/screen_special.html#choice
 
 init python:
-    # 第一次碰到menu时新建记录，如果有选项是引用另一个menu也需要标记，如果已存在则直接返回
-    def get_choice_record(mark, items):
+    # 获取当前上下文中菜单对应的选项记录
+    def get_choice_record(items):
+        # Prediction 时跳过
         if items[0][0] == "Menu Prediction":
             return
-        # 初始化选项记录表
+        mark = renpy.game.context().current
+        # 第一次遇到该菜单，新建记录
         if mark not in _chosen:
             _chosen[mark] = record = {}
         return _chosen[mark]
@@ -43,9 +45,9 @@ init python:
 # 默认计时选项的时间
 default choice_time = 15.0
 
-# 记录选项是否被选过的字典
+# 记录选项是否被选过的字典，key 是 context 字符串
 default _chosen = {}
-# 通过id索引
+# 通过 id 索引，key 是菜单的 id 字符串
 default _chosen_id = {}
 
 # items:
@@ -76,10 +78,8 @@ screen choice(items, t=False, id=None, r=True):
     # 选过标记
     if r:
         python:
-            # 通过获取上下文获得选项的唯一标记
-            choice_mark = renpy.game.context().current
-            # 用这个标记去获得选项记录
-            record = get_choice_record(choice_mark, items)
+            # 获取当前选项的记录
+            record = get_choice_record(items)
             # 如果该menu有id，还需要建立id索引
             if id != None:
                 _chosen_id[id] = record
@@ -92,10 +92,9 @@ screen choice(items, t=False, id=None, r=True):
                     textbutton i.caption action i.action
                 # 记录这个选项
                 else:
-                    # 是否有子菜单
-                    $ no_child = "child" not in i.kwargs
+                    $ child_id = i.kwargs.get("child")
                     # 没有子菜单，根据历史记录决定是否选过
-                    if no_child:
+                    if not child_id:
                         # 之前没记录过，是新出现的选项
                         if item not in record:
                             $ is_chosen = record[item] = False
@@ -103,26 +102,23 @@ screen choice(items, t=False, id=None, r=True):
                             $ is_chosen = record[item]
                     # 有子菜单，根据子菜单是否全都选过决定是否选过
                     else:
-                        $ record[item] = i.kwargs["child"]
-                        $ is_chosen = judge_item_chosen(record[item])
+                        $ record[item] = child_id
+                        $ is_chosen = judge_item_chosen(child_id)
                     textbutton i.caption:
-                        # 选过增加标记
+                        # 选过则显示选过标记
                         if is_chosen:
                             foreground "gui/choice/choice_tik.png"
-                        if no_child:
+                        # 不包含子菜单的选项，选择后直接标记选过
+                        if not child_id:
                             action [Function(set_choice_record, record, item), i.action]
                         else:
                             action i.action
-
     # 不需要记录
     else:
         vbox:
             for i in items:
                 textbutton i.caption:
                     action i.action
-                    # 有标题则选项稍向下
-                    if title:
-                        yoffset 60
 
 style choice_vbox is vbox
 style choice_button is button
