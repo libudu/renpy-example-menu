@@ -7,7 +7,7 @@
 
 init python:
     # 第一次碰到menu时新建记录，如果有选项是引用另一个menu也需要标记，如果已存在则直接返回
-    def new_choice_record(mark, items):
+    def get_choice_record(mark, items):
         if items[0][0] == "Menu Prediction":
             return
         # 初始化选项记录表
@@ -16,32 +16,28 @@ init python:
         return _chosen[mark]
 
     def set_choice_record(record, item, state=True):
-        print("set recort", record, item)
         record[item] = state
-        print("seted recort", record, item)
-
 
     # 判断一个选项是否被选过
+    # None: 当前选项不需要记录，判断为选过
+    # bool：返回 bool 值本身，作为递归的终点
+    # 字符串：该选项引用了另一个菜单，通过这个菜单的所有选项是否选过判断当前选项是否选过
     def judge_item_chosen(state):
-        # 如果当前选项不需要记录，那就返回True
         if state == None:
             return True
-        # 如果是bool值的话则直接返回
         if isinstance(state, bool):
             return state
-        # 否则是字符串，说明引用了另一个menu
-        # 如果这个menu连记录都没有，说明没有碰到过，那肯定没选过
+        # 没有记录的菜单，没有选过
         if state not in _chosen_id:
             print("【%s】没有记录！" % str(state))
             return False
-        # 有记录，则遍历这个子menu的每个记录
+        # 有记录的菜单，所有选项都选过则判断为选过，否则没选过
         else:
             child_menu = _chosen_id[state]
             # 只要有一个没选过那就是没选过
             for i in child_menu.values():
                 if judge_item_chosen(i) == False:
                     return False
-            # 都选过那就选过了
             return True
 
 # 默认计时选项的时间
@@ -53,13 +49,13 @@ default _chosen = {}
 default _chosen_id = {}
 
 # items:
-# t:限时选项的时间，True 使用默认时间，False 就是不限时选项
-# id:标记当前 menu ，可以通过_chosen_id找到选项记录
-# r:是否对当前 menu 进行记录，如果不记录的话就不显示是否游览过了
+# t: Number 限时选项的时间，True 使用默认时间，False 就是不限时选项
+# id: 标记当前 menu ，可以通过_chosen_id找到选项记录
+# r: 是否对当前 menu 选过标记
 screen choice(items, t=False, id=None, r=True):
     style_prefix "choice"
 
-    # 如果是限时选项
+    # 限时选项
     if t:
         # 没有指定时间就使用默认时间
         if t is True:
@@ -77,48 +73,40 @@ screen choice(items, t=False, id=None, r=True):
         timer t:
             action Return(0)
 
-    # 需要记录
+    # 选过标记
     if r:
         python:
             # 通过获取上下文获得选项的唯一标记
             choice_mark = renpy.game.context().current
             # 用这个标记去获得选项记录
-            record = new_choice_record(choice_mark, items)
+            record = get_choice_record(choice_mark, items)
             # 如果该menu有id，还需要建立id索引
             if id != None:
                 _chosen_id[id] = record
         vbox:
             for index, i in enumerate(items):
                 $ item = i[0]
-                # 当前选项是否被隐藏
-                $ hide = i.kwargs.get("h")
-                if hide == True:
-                    $ record[item] = True
-                # 不记录这个选项，永远为 None
-                elif i.kwargs.get("r") == False:
+                # 不记录这个选项，标记为 None
+                if i.kwargs.get("r") == False:
                     $ record[item] = None
                     textbutton i.caption action i.action
                 # 记录这个选项
                 else:
-                    # 是否有子 menu
+                    # 是否有子菜单
                     $ no_child = "child" not in i.kwargs
-                    # 是否有 id
-                    $ id = i.kwargs.get("id")
-                    if id != None:
-                        $ item = id
-                    # 没有子 menu
+                    # 没有子菜单，根据历史记录决定是否选过
                     if no_child:
                         # 之前没记录过，是新出现的选项
                         if item not in record:
                             $ is_chosen = record[item] = False
                         else:
                             $ is_chosen = record[item]
-                    # 有子 menu
+                    # 有子菜单，根据子菜单是否全都选过决定是否选过
                     else:
                         $ record[item] = i.kwargs["child"]
                         $ is_chosen = judge_item_chosen(record[item])
                     textbutton i.caption:
-                        # 已经选过了
+                        # 选过增加标记
                         if is_chosen:
                             foreground "gui/choice/choice_tik.png"
                         if no_child:
