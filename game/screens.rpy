@@ -1,4 +1,4 @@
-﻿################################################################################
+################################################################################
 ## 初始化
 ################################################################################
 
@@ -190,39 +190,6 @@ style input_prompt:
 style input:
     xalign gui.dialogue_text_xalign
     xmaximum gui.dialogue_width
-
-
-## 选择屏幕 ########################################################################
-##
-## 此屏幕用于显示由 menu 语句生成的游戏内选项。参数 items 是一个对象列表，每个对
-## 象都有字幕和动作字段。
-##
-## https://www.renpy.cn/doc/screen_special.html#choice
-
-screen choice(items):
-    style_prefix "choice"
-
-    vbox:
-        for i in items:
-            textbutton i.caption action i.action
-
-
-style choice_vbox is vbox
-style choice_button is button
-style choice_button_text is button_text
-
-style choice_vbox:
-    xalign 0.5
-    ypos 270
-    yanchor 0.5
-
-    spacing gui.choice_spacing
-
-style choice_button is default:
-    properties gui.button_properties("choice_button")
-
-style choice_button_text is default:
-    properties gui.button_text_properties("choice_button")
 
 
 ## 快捷菜单屏幕 ######################################################################
